@@ -27,4 +27,5 @@ class Professors(db.Model):
 
     @property
     def reviews(self):
-        return [a.serialize for a in db.session.query(Reviews).filter_by(professor_id=self.id).all()]
+        q = db.session.query(Reviews).filter_by(professor_id=self.id)
+        return [a.serialize for a in q.all()]

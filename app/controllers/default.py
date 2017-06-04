@@ -19,19 +19,13 @@ def index():
 
 @mod.route("/help", methods=["GET"])
 def help():
-    """
-    Returns a list of available URLs.
-    :returns: A JSON response object
-    :rtype: flask.Response
-    """
-    # func_list = {}
     func_list = []
     for rule in app.url_map.iter_rules():
         if rule.endpoint != "static":
             methods = rule.methods
             methods.discard("OPTIONS")
             methods.discard("HEAD")
-            func_list.append(rule.rule + "  -  " + repr(methods).replace("set(","").replace(")",""))
+            func_list.append('%s -  %s' % (rule.rule,' '.join(methods)))
 
     return jsonify(
         prepare_json_response(
