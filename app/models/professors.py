@@ -29,3 +29,10 @@ class Professors(db.Model):
     def reviews(self):
         q = db.session.query(Reviews).filter_by(professor_id=self.id)
         return [a.serialize for a in q.all()]
+
+    @staticmethod
+    def get_ratings(first_name,last_name):
+        q = db.session.query(Professors).filter_by(first_name=first_name,last_name=last_name).first()
+        if q is None:
+            return {'overall_score':-1,'helpful_score':-1,'clarity_score':-1,'easy_score':-1,'reviews':[]}
+        return q.serialize
