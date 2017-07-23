@@ -17,7 +17,8 @@ class Professors(db.Model):
     @property
     def serialize(self):
         """Return object data in easily serializeable format"""
-        return {'first_name': self.first_name,
+        return {'professor_id': self.id,
+                'first_name': self.first_name,
                 'last_name': self.last_name,
                 'overall_score': self.overall_score,
                 'helpful_score': self.helpful_score,

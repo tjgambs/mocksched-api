@@ -1,7 +1,7 @@
 
 from flask import abort, Blueprint, jsonify
 from app.utils import prepare_json_response
-from app import db
+from app import db, cache
 
 from app.models.professors import Professors
 from app.models.term_courses import TermCourses
@@ -15,8 +15,9 @@ mod = Blueprint("v1_search", __name__, url_prefix="/v1/search")
 
 
 @mod.route("/all_terms", methods=["GET"])
+@cache.memoize(3600)
 def all_terms():
-    q = db.session.query(Terms).order_by(Terms.description)
+    q = db.session.query(Terms).order_by(Terms.stream)
     payload = [a.serialize for a in q.all()]
     data = {'results': payload}
     return jsonify(
@@ -28,6 +29,7 @@ def all_terms():
     ) 
 
 @mod.route("/all_subjects/<stream>", methods=["GET"])
+@cache.memoize(3600)
 def all_subjects(stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
     q = db.session.query(Courses.subject).filter(Courses.id.in_(sq)).order_by(Courses.subject)
@@ -42,9 +44,10 @@ def all_subjects(stream):
     ) 
 
 @mod.route("/by_subject_number/<subject>/<number>/<stream>", methods=["GET"])
-def by_subject_and_number(subject,number,stream):
+@cache.memoize(3600)
+def by_subject_and_number(subject, number, stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
-    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.subject.ilike(subject))&(Courses.catalog_nbr==number))
+    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.subject.ilike(subject))&(Courses.catalog_nbr.like(number+'%')))
     payload = [a.serialize for a in q.all()]
     data = {'results': payload}
     return jsonify(
@@ -56,9 +59,10 @@ def by_subject_and_number(subject,number,stream):
     ) 
 
 @mod.route("/by_subject/<subject>/<stream>", methods=["GET"])
-def by_subject(subject,stream):
+@cache.memoize(3600)
+def by_subject(subject, stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
-    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.subject.ilike(subject)))
+    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.subject.ilike(subject))).order_by(Courses.catalog_nbr)
     payload = [a.serialize for a in q.all()]
     data = {'results': payload}
     return jsonify(
@@ -70,9 +74,10 @@ def by_subject(subject,stream):
     ) 
 
 @mod.route("/by_number/<number>/<stream>", methods=["GET"])
-def by_number(number,stream):
+@cache.memoize(3600)
+def by_number(number, stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
-    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.catalog_nbr==number))
+    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.catalog_nbr.like(number+'%')))
     payload = [a.serialize for a in q.all()]
     data = {'results': payload}    
     return jsonify(
@@ -84,7 +89,8 @@ def by_number(number,stream):
     )
 
 @mod.route("/by_learning_domain/<learning_domain>/<stream>", methods=["GET"])
-def by_learning_domain(learning_domain,stream):
+@cache.memoize(3600)
+def by_learning_domain(learning_domain, stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
     q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.learning_domain==learning_domain))
     payload = [a.serialize for a in q.all()]
@@ -98,7 +104,8 @@ def by_learning_domain(learning_domain,stream):
     ) 
 
 @mod.route("/by_learning_domain_subject/<learning_domain>/<subject>/<stream>", methods=["GET"])
-def by_learning_domain_subject(learning_domain,subject,stream):
+@cache.memoize(3600)
+def by_learning_domain_subject(learning_domain, subject, stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
     q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.learning_domain==learning_domain)&(Courses.subject.ilike(subject)))
     payload = [a.serialize for a in q.all()]
@@ -111,8 +118,25 @@ def by_learning_domain_subject(learning_domain,subject,stream):
         )
     )
 
+@mod.route('/by_professor_id/<pid>')
+@cache.memoize(3600)
+def by_professor_id(pid):
+    q = db.session.query(Professors).filter_by(id=pid).first()
+    if q is not None:
+        data = {'results': q.serialize}
+    else:
+        data = {'results': {}}
+    return jsonify(
+        prepare_json_response(
+            message="OK",
+            success=True,
+            data=data
+        )
+    )
+
 @mod.route("/by_class/<subject>/<number>/<stream>", methods=["GET"])
-def by_class(subject,number,stream):
+@cache.memoize(60)
+def by_class(subject, number, stream):
     base_url = 'https://offices.depaul.edu/_layouts/DUC.SR.ClassSvc/DUClassSvc.ashx?action=getclasses&strm=%s&subject=%s&catalog_nbr=%s'
     url = base_url%(stream,subject.upper(),number)
     payload = requests.get(url).json()
@@ -127,5 +151,24 @@ def by_class(subject,number,stream):
             data=data
         )
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
