@@ -47,7 +47,7 @@ def all_subjects(stream):
 @cache.memoize(3600)
 def by_subject_and_number(subject, number, stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
-    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.subject.ilike(subject))&(Courses.catalog_nbr.like(number+'%')))
+    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.subject.ilike(subject))&(Courses.catalog_nbr.like(number+'%'))).order_by(Courses.catalog_nbr)
     payload = [a.serialize for a in q.all()]
     data = {'results': payload}
     return jsonify(
@@ -77,7 +77,7 @@ def by_subject(subject, stream):
 @cache.memoize(3600)
 def by_number(number, stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
-    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.catalog_nbr.like(number+'%')))
+    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.catalog_nbr.like(number+'%'))).order_by(Courses.subject, Courses.catalog_nbr)
     payload = [a.serialize for a in q.all()]
     data = {'results': payload}    
     return jsonify(
@@ -92,7 +92,7 @@ def by_number(number, stream):
 @cache.memoize(3600)
 def by_learning_domain(learning_domain, stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
-    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.learning_domain==learning_domain))
+    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.learning_domain==learning_domain)).order_by(Courses.subject, Courses.catalog_nbr)
     payload = [a.serialize for a in q.all()]
     data = {'results': payload}
     return jsonify(
@@ -107,7 +107,37 @@ def by_learning_domain(learning_domain, stream):
 @cache.memoize(3600)
 def by_learning_domain_subject(learning_domain, subject, stream):
     sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
-    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.learning_domain==learning_domain)&(Courses.subject.ilike(subject)))
+    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.learning_domain==learning_domain)&(Courses.subject.ilike(subject))).order_by(Courses.catalog_nbr)
+    payload = [a.serialize for a in q.all()]
+    data = {'results': payload}
+    return jsonify(
+        prepare_json_response(
+            message="OK",
+            success=True,
+            data=data
+        )
+    )
+
+@mod.route("/by_learning_domain_number/<learning_domain>/<number>/<stream>", methods=["GET"])
+@cache.memoize(3600)
+def by_learning_domain_number(learning_domain, number, stream):
+    sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
+    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.learning_domain==learning_domain)&(Courses.catalog_nbr.like(number+'%'))).order_by(Courses.subject, Courses.catalog_nbr)
+    payload = [a.serialize for a in q.all()]
+    data = {'results': payload}
+    return jsonify(
+        prepare_json_response(
+            message="OK",
+            success=True,
+            data=data
+        )
+    )
+
+@mod.route("/by_learning_domain_subject_number/<learning_domain>/<subject>/<number>/<stream>", methods=["GET"])
+@cache.memoize(3600)
+def by_learning_domain_subject_number(learning_domain, subject, number, stream):
+    sq = db.session.query(TermCourses.course_id).filter_by(stream=stream)
+    q = db.session.query(Courses).filter(Courses.id.in_(sq)&(Courses.learning_domain==learning_domain)&(Courses.subject.ilike(subject))&(Courses.catalog_nbr.like(number+'%'))).order_by(Courses.subject, Courses.catalog_nbr)
     payload = [a.serialize for a in q.all()]
     data = {'results': payload}
     return jsonify(
