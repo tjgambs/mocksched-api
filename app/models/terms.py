@@ -5,13 +5,11 @@ class Terms(db.Model):
 
     __tablename__ = "terms"
 
-    id = db.Column(db.Integer, primary_key=True)
-    stream = db.Column(db.String)
+    stream = db.Column(db.String, primary_key=True)
     description = db.Column(db.String)
 
     @property
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {'stream': self.stream,
-                'description': self.description
-                }
+                'description': self.description}

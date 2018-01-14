@@ -6,7 +6,8 @@ class Reviews(db.Model):
     __tablename__ = "reviews"
 
     id = db.Column(db.Integer, primary_key=True)
-    professor_id = db.Column(db.Integer, db.ForeignKey('professors.id'), index=True)
+    professor_id = db.Column(
+        db.Integer, db.ForeignKey('professors.id'), index=True)
     attendance = db.Column(db.String)
     clarity_color = db.Column(db.String)
     easy_color = db.Column(db.String)

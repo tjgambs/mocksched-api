@@ -2,10 +2,10 @@ from app import db
 
 
 class Courses(db.Model):
-    
+
     __tablename__ = "courses"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String, primary_key=True)
     title = db.Column(db.String)
     subject = db.Column(db.String)
     catalog_nbr = db.Column(db.String)
